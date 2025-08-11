@@ -8,15 +8,15 @@ on:
   workflow_dispatch:
     inputs:
       run_api:
-        description: "Executar API?"
+        description: Executar API?
         type: boolean
         default: true
       run_mobile:
-        description: "Executar Mobile?"
+        description: Executar Mobile?
         type: boolean
         default: false
       extra_robot_args:
-        description: "Args extras p/ Robot"
+        description: Args extras p/ Robot
         type: string
         default: ""
 
@@ -24,7 +24,7 @@ jobs:
   call-reusable:
     uses: ./.github/workflows/robot-ci-reusable.yml
     with:
-      run_api: ${{ inputs.run_api || true }}
-      run_mobile: ${{ inputs.run_mobile || false }}
-      extra_robot_args: ${{ inputs.extra_robot_args || '' }}
+      run_api: ${{ inputs.run_api }}
+      run_mobile: ${{ inputs.run_mobile }}
+      extra_robot_args: ${{ inputs.extra_robot_args }}
       suite_name: "CI Direto"
