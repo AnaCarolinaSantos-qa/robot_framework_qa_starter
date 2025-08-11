@@ -1,0 +1,22 @@
+name: Example Consumer (Outro Repo)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  qa-tests:
+    # Substitua <OWNER>/<REPO> pelo repositório que contém o workflow reutilizável
+    uses: <OWNER>/<REPO>/.github/workflows/robot-ci-reusable.yml@main
+    with:
+      run_api: true
+      run_mobile: false
+      suite_name: "Execução PR"
+      email_to: "qa-time@empresa.com"
+    secrets:
+      SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+      APPIUM_SERVER_URL: ${{ secrets.APPIUM_SERVER_URL }}
+      APPIUM_CAPS_JSON: ${{ secrets.APPIUM_CAPS_JSON }}
