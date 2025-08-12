@@ -3,7 +3,7 @@ name: Accessibility Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
     paths:
       - "tests/**"
       - "src/**"
@@ -11,7 +11,7 @@ on:
       - ".github/workflows/ci_accessibility_tests.yml"
       - "requirements*.txt"
   pull_request:
-    branches: [ main ]
+    branches: [ "main" ]
     paths:
       - "tests/**"
       - "src/**"
@@ -21,27 +21,25 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write  # para comentar JUnit no PR
+  pull-requests: write
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: "${{ github.workflow }}-${{ github.ref }}"
   cancel-in-progress: true
 
 jobs:
   accessibility-tests:
-    name: Robot + axe-core
+    name: "Robot + axe-core"
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     env:
-      PIP_CACHE_DIR: ~/.cache/pip
-      RF_RESULTS_DIR: results
-      TESTS_DIR: tests/accessibility_tests
-      # Use headless Chrome via SeleniumLibrary
-      ROBOT_OPTIONS: >
-        -d results
-        --xunit results/junit.xml
-        -v BROWSER:headlesschrome
+      PIP_CACHE_DIR: "${{ runner.temp }}/.cache/pip"
+      RF_RESULTS_DIR: "results"
+      TESTS_DIR: "tests/accessibility_tests"
+      BROWSER: "headlesschrome"
+      # uma única string, sem multilinha, evita ambiguidade do YAML
+      ROBOT_OPTIONS: "-d results --xunit results/junit.xml -v BROWSER:headlesschrome"
 
     steps:
       - name: Checkout
@@ -59,12 +57,12 @@ jobs:
       - name: Setup Google Chrome
         uses: browser-actions/setup-chrome@v1
         with:
-          chrome-version: stable
+          chrome-version: "stable"
 
       - name: Setup ChromeDriver
         uses: nanasess/setup-chromedriver@v2
         with:
-          chromedriver-version: latest
+          chromedriver-version: "latest"
 
       - name: Install dependencies
         run: |
@@ -72,33 +70,29 @@ jobs:
           if [ -f requirements.txt ]; then
             pip install -r requirements.txt
           else
-            pip install \
-              robotframework \
-              robotframework-seleniumlibrary \
-              robotframework-axe
+            pip install robotframework robotframework-seleniumlibrary robotframework-axe
           fi
 
       - name: Smoke: print versions
         run: |
           python --version
-          echo "Chrome: $(google-chrome --version || chrome --version || true)"
-          echo "ChromeDriver: $(chromedriver --version)"
+          (google-chrome --version || chrome --version || true)
+          chromedriver --version
 
       - name: Run accessibility tests (headless)
         run: |
           mkdir -p "${RF_RESULTS_DIR}"
-          # Xvfb não é necessário no new headless, mas mantém compat com libs antigas:
-          xvfb-run -a robot $ROBOT_OPTIONS "${TESTS_DIR}"
+          xvfb-run -a robot ${ROBOT_OPTIONS} "${TESTS_DIR}"
 
       - name: Upload results (reports + logs)
-        if: always()
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: accessibility-test-results-${{ github.run_id }}
-          path: results/
+          name: "accessibility-test-results-${{ github.run_id }}"
+          path: "results/"
 
       - name: Publish JUnit to PR
-        if: always() && github.event_name == 'pull_request'
+        if: ${{ always() && github.event_name == 'pull_request' }}
         uses: mikepenz/action-junit-report@v4
         with:
           check_name: "Accessibility Tests (Robot)"
