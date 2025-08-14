@@ -1,37 +1,40 @@
-name: Accessibility Tests
-
+name: Accessibility (axe-core via Robot)
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
 
 jobs:
-  accessibility-tests:
+  a11y:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: '3.12'
 
-      - name: Install Dependencies
+      - name: Install deps
         run: |
-          pip install robotframework
-          pip install robotframework-seleniumlibrary
-          pip install robotframework-axe
-          sudo apt-get install -y chromium-browser
+          python -m pip install -U pip
+          pip install -r requirements.txt
 
-      - name: Run Accessibility Tests
+      - name: Run Robot (A11y)
         run: |
-          robot -d results tests/accessibility_tests/
+          robot -L TRACE -d results tests/accessibility_tests
 
-      - name: Upload Results
-        uses: actions/upload-artifact@v3
+      - name: Upload JSON results
         if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: accessibility-test-results
-          path: results/
+          name: axe-json
+          path: results/accessibility/*.axe.json
+
+      - name: Upload Robot logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: robot-report
+          path: results
