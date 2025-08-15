@@ -1,4 +1,4 @@
-name: Accessibility ♿
+name: Accessibility
 
 on:
   workflow_dispatch:
