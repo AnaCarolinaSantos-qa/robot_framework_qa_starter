@@ -1,37 +1,66 @@
-name: Accessibility Tests
+name: Accessibility
 
 on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch para rodar os testes'
+        required: false
+        default: 'main'
+        type: string
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
 
 jobs:
-  accessibility-tests:
+  a11y:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      # Checkout quando disparar MANUALMENTE (usa a branch escolhida)
+      - name: 📥 Checkout (manual - branch escolhida)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+
+      # Checkout para push/PR (comporta-se normalmente)
+      - name: 📥 Checkout (push/PR)
+        if: ${{ github.event_name != 'workflow_dispatch' }}
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: 🐍 Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: '3.12'
 
-      - name: Install Dependencies
+      - name: 📦 Instalar dependências (somente o necessário para A11y)
         run: |
-          pip install robotframework
-          pip install robotframework-seleniumlibrary
-          pip install robotframework-axe
-          sudo apt-get install -y chromium-browser
+          python -m pip install --upgrade pip wheel setuptools
+          pip install \
+            robotframework==7.0.1 \
+            robotframework-seleniumlibrary==6.7.1 \
+            selenium==4.24.0 \
+            axe-selenium-python==2.1.6 \
+            webdriver-manager==4.0.2 \
+            requests==2.32.3 \
+            robotframework-requests==0.9.7 \
+            PyYAML==6.0.2
 
-      - name: Run Accessibility Tests
+      - name: 🧪 Executar Robot (A11y)
         run: |
-          robot -d results tests/accessibility_tests/
+          robot -L TRACE -d results tests/accessibility_tests
 
-      - name: Upload Results
-        uses: actions/upload-artifact@v3
+      - name: 📤 Upload JSON (axe)
         if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: accessibility-test-results
-          path: results/
+          name: axe-json
+          path: results/accessibility/*.axe.json
+
+      - name: 📤 Upload Relatórios Robot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: robot-report
+          path: results
