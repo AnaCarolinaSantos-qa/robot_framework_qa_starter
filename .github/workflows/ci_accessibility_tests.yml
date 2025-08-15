@@ -52,7 +52,7 @@ jobs:
 
       - name: 🧪 Executar testes Robot (A11y)
         run: |
-          robot -L TRACE -d results tests/accessibility_tests
+          robot -d results tests/accessibility_tests
 
       - name: 📤 Upload JSON results
         if: always()
