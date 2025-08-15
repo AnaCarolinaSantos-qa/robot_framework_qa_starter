@@ -1,0 +1,155 @@
+name: CI - Robot Framework Lightweight
+
+on:
+  push:
+    branches: [ ]
+  pull_request:
+    branches: [ ]
+  workflow_dispatch:
+
+env:
+  HISTORY_DIR: reports-history
+
+jobs:
+  # ===============================
+  # 1️⃣ API Tests (Sharded)
+  # ===============================
+  api-tests:
+    name: API Shard ${{ matrix.shard }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Instalar Robot Framework
+        run: |
+          pip install --upgrade pip
+          pip install robotframework robotframework-requests robotframework-jsonlibrary
+
+      - name: Executar testes API
+        run: |
+          mkdir -p results/api/shard-${{ matrix.shard }}
+          robot --outputdir results/api/shard-${{ matrix.shard }} tests/api/shard_${{ matrix.shard }}
+
+      # Upload apenas se falhar
+      - name: Upload evidências API
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-shard-${{ matrix.shard }}-fail
+          path: results/api/shard-${{ matrix.shard }}
+
+  # ===============================
+  # 2️⃣ Mobile Tests (Sharded)
+  # ===============================
+  mobile-tests:
+    name: Mobile Shard ${{ matrix.shard }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Instalar Robot + Appium
+        run: |
+          pip install robotframework Appium-Python-Client robotframework-appiumlibrary
+
+      - name: Emulador Android + Testes
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          target: google_apis
+          arch: x86_64
+          profile: pixel_5
+          script: |
+            mkdir -p results/mobile/shard-${{ matrix.shard }}
+            robot --outputdir results/mobile/shard-${{ matrix.shard }} tests/mobile/shard_${{ matrix.shard }}
+
+      # Upload apenas se falhar
+      - name: Upload evidências Mobile
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-shard-${{ matrix.shard }}-fail
+          path: results/mobile/shard-${{ matrix.shard }}
+
+  # ===============================
+  # 3️⃣ Performance Tests k6
+  # ===============================
+  performance-tests:
+    name: Performance k6
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Instalar k6
+        run: |
+          sudo apt update && sudo apt install -y gnupg software-properties-common
+          curl -fsSL https://dl.k6.io/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt update && sudo apt install -y k6
+
+      - name: Executar k6 e gerar HTML leve
+        run: |
+          mkdir -p results/performance
+          TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')
+          k6 run --out json=results/performance/result-$TIMESTAMP.json tests/performance/load_test.js
+          # Converte json para html leve
+          npx k6-to-html results/performance/result-$TIMESTAMP.json > results/performance/report-$TIMESTAMP.html || true
+
+      - name: Upload Performance Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-report
+          path: results/performance
+  # ===============================
+  # 4️⃣ Consolidar Relatórios Leves e Histórico com Link Fixo
+  # ===============================
+  consolidate-reports:
+    name: Consolidar Relatórios e Histórico
+    runs-on: ubuntu-latest
+    needs: [api-tests, mobile-tests, performance-tests]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Baixar artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: results
+
+      - name: Organizar histórico com link fixo
+        run: |
+          TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')
+          mkdir -p reports-history/$TIMESTAMP
+          cp -r results/* reports-history/$TIMESTAMP/
+
+          # Atualiza link fixo "latest"
+          rm -rf reports-history/latest
+          cp -r reports-history/$TIMESTAMP reports-history/latest
+
+      - name: Deploy Histórico no GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: reports-history
