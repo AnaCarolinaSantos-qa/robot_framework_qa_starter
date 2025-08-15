@@ -1,6 +1,7 @@
 # Ignore os arquivos de configuração do ambiente
 .env
 *.env
+.venv
 
 # Ignore os diretórios de logs e relatórios
 logs/
