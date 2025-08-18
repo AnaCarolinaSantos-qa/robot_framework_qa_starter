@@ -13,7 +13,6 @@ on:
 permissions:
   contents: read
 
-# Evita filas desnecessárias por branch/PR
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
@@ -21,18 +20,16 @@ concurrency:
 env:
   PYTHON_VERSION: "3.11"
   RESULTS_DIR: "results"
-  # Seleção de tags por evento (smoke p/ PR, regression p/ main e nightly)
-  RF_TAGS: ${{ github.event_name == 'pull_request' && 'smoke' || 'regression' }}
-  # Args seguros p/ Chrome headless (SeleniumLibrary)
   CHROME_ARGS: "--headless=new;--disable-gpu;--disable-dev-shm-usage;--no-sandbox;--window-size=1366,900"
 
 jobs:
 
-  # ==== API ===============================================================
   api:
-    name: API — ${{ env.RF_TAGS == 'smoke' && 'Smoke (PR)' || 'Regressão' }}
+    name: API
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      RF_TAGS: ${{ github.event_name == 'pull_request' && 'smoke' || 'regression' }}
 
     steps:
       - name: 📥 Checkout
@@ -44,7 +41,6 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: requirements.txt
-        # cache: pip acelera installs. :contentReference[oaicite:3]{index=3}
 
       - name: 📦 Instalar dependências
         run: |
@@ -53,10 +49,9 @@ jobs:
 
       - name: ▶️ Executar testes de API
         run: |
-          mkdir -p $RESULTS_DIR/api
-          # Ajuste o caminho abaixo conforme seu repo
+          mkdir -p "$RESULTS_DIR/api"
           if [ -d tests/API_tests ]; then
-            robot -d $RESULTS_DIR/api -i "${{ env.RF_TAGS }}" tests/API_tests
+            robot -d "$RESULTS_DIR/api" -i "${RF_TAGS}" tests/API_tests
           else
             echo "Diretório tests/API_tests não encontrado, pulando API."
           fi
@@ -65,15 +60,16 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: api-${{ env.RF_TAGS }}-${{ github.run_id }}
+          name: api-${{ env.RESULTS_DIR }}-${{ github.run_id }}
           path: ${{ env.RESULTS_DIR }}/api/**
           retention-days: 14
 
-  # ==== UI (Selenium/Chrome) =============================================
   ui:
-    name: UI — ${{ env.RF_TAGS == 'smoke' && 'Smoke (PR)' || 'Regressão' }}
+    name: UI
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    env:
+      RF_TAGS: ${{ github.event_name == 'pull_request' && 'smoke' || 'regression' }}
 
     steps:
       - name: 📥 Checkout
@@ -91,21 +87,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: 🌐 Instalar Chrome + ChromeDriver compatíveis
+      - name: 🌐 Instalar Chrome + ChromeDriver
         uses: browser-actions/setup-chrome@v1
         with:
           chrome-version: "stable"
           install-dependencies: true
-        # A action instala Chrome e o ChromeDriver compatível. :contentReference[oaicite:4]{index=4}
 
       - name: ▶️ Executar testes de UI (headless)
         env:
           BROWSER: chrome
-          CHROME_ARGS: ${{ env.CHROME_ARGS }}
         run: |
-          mkdir -p $RESULTS_DIR/ui
+          mkdir -p "$RESULTS_DIR/ui"
           if [ -d tests/UI_tests ]; then
-            robot -d $RESULTS_DIR/ui -i "${{ env.RF_TAGS }}" \
+            robot -d "$RESULTS_DIR/ui" -i "${RF_TAGS}" \
               -v BROWSER:${BROWSER} -v CHROME_ARGS:"${CHROME_ARGS}" \
               tests/UI_tests
           else
@@ -116,13 +110,12 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ui-${{ env.RF_TAGS }}-${{ github.run_id }}
+          name: ui-${{ env.RESULTS_DIR }}-${{ github.run_id }}
           path: ${{ env.RESULTS_DIR }}/ui/**
           retention-days: 14
 
-  # ==== Acessibilidade (axe-core / tags a11y) ============================
   a11y:
-    name: Acessibilidade — ${{ env.RF_TAGS == 'smoke' && 'Rápida (PR)' || 'Completa' }}
+    name: Acessibilidade
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -142,11 +135,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: ▶️ Executar testes de A11y (tags a11y)
+      - name: ▶️ Executar testes de A11y
         run: |
-          mkdir -p $RESULTS_DIR/a11y
+          mkdir -p "$RESULTS_DIR/a11y"
           if [ -d tests/accessibility_tests ]; then
-            robot -d $RESULTS_DIR/a11y -i a11y tests/accessibility_tests
+            robot -d "$RESULTS_DIR/a11y" -i a11y tests/accessibility_tests
           else
             echo "Diretório tests/accessibility_tests não encontrado, pulando A11y."
           fi
@@ -155,13 +148,12 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: a11y-${{ env.RF_TAGS }}-${{ github.run_id }}
+          name: a11y-${{ env.RESULTS_DIR }}-${{ github.run_id }}
           path: ${{ env.RESULTS_DIR }}/a11y/**
           retention-days: 14
 
-  # ==== Performance (k6 — leve em main/nightly, opcional em PR) ==========
   perf:
-    name: Performance — Cenário leve (k6)
+    name: Performance (k6)
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -177,17 +169,15 @@ jobs:
           curl -fsSL https://dl.k6.io/key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/k6.gpg
           echo "deb [signed-by=/etc/apt/keyrings/k6.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
           sudo apt-get update && sudo apt-get install -y k6
-        # Baseado na doc oficial do k6. :contentReference[oaicite:5]{index=5}
 
       - name: ▶️ Executar k6 (se houver script)
         run: |
-          mkdir -p $RESULTS_DIR/perf
+          mkdir -p "$RESULTS_DIR/perf"
           if [ -f tests/performance_tests/main.js ]; then
-            # Em PR roda 1m; em main/nightly 3m
             if [ "${{ github.event_name }}" = "pull_request" ]; then
-              k6 run --vus 2 --duration 1m --summary-export=$RESULTS_DIR/perf/summary.json tests/performance_tests/main.js
+              k6 run --vus 2 --duration 1m --summary-export="$RESULTS_DIR/perf/summary.json" tests/performance_tests/main.js
             else
-              k6 run --vus 5 --duration 3m --summary-export=$RESULTS_DIR/perf/summary.json tests/performance_tests/main.js
+              k6 run --vus 5 --duration 3m --summary-export="$RESULTS_DIR/perf/summary.json" tests/performance_tests/main.js
             fi
           else
             echo "tests/performance_tests/main.js não encontrado, pulando k6."
@@ -197,13 +187,12 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: perf-${{ env.RF_TAGS }}-${{ github.run_id }}
+          name: perf-${{ env.RESULTS_DIR }}-${{ github.run_id }}
           path: ${{ env.RESULTS_DIR }}/perf/**
           retention-days: 14
 
-  # ==== Sumário/Relato final ============================================
   resumo:
-    name: 📝 Resumo da execução
+    name: 📝 Resumo
     runs-on: ubuntu-latest
     needs: [api, ui, a11y, perf]
     if: always()
@@ -219,9 +208,8 @@ jobs:
           echo "| A11y | ${{ needs.a11y.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Perf | ${{ needs.perf.result }} |" >> $GITHUB_STEP_SUMMARY
 
-      # Notificação opcional via Slack (defina secret SLACK_WEBHOOK_URL)
       - name: 📣 Notificar Slack (opcional)
-        if: ${{ env.SLACK_WEBHOOK_URL != '' }}
+        if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
