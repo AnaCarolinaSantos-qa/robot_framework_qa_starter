@@ -6,8 +6,7 @@ on:
   push:
     branches: ["main"]
   schedule:
-    # 05:00 UTC ≈ 02:00 America/Sao_Paulo
-    - cron: "0 5 * * *"
+    - cron: "0 5 * * *" # 02:00 America/Sao_Paulo
   workflow_dispatch:
 
 permissions:
@@ -21,78 +20,66 @@ env:
   PYTHON_VERSION: "3.11"
   RESULTS_DIR: "results"
   CHROME_ARGS: "--headless=new;--disable-gpu;--disable-dev-shm-usage;--no-sandbox;--window-size=1366,900"
+  # Mapeia o segredo p/ env para permitir if: env.SLACK_WEBHOOK_URL != ''
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
 jobs:
-
   api:
     name: API
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
       RF_TAGS: ${{ github.event_name == 'pull_request' && 'smoke' || 'regression' }}
-
     steps:
-      - name: 📥 Checkout
-        uses: actions/checkout@v4
-
-      - name: 🐍 Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: requirements.txt
-
       - name: 📦 Instalar dependências
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
       - name: ▶️ Executar testes de API
         run: |
           mkdir -p "$RESULTS_DIR/api"
           if [ -d tests/API_tests ]; then
             robot -d "$RESULTS_DIR/api" -i "${RF_TAGS}" tests/API_tests
           else
-            echo "Diretório tests/API_tests não encontrado, pulando API."
+            echo "tests/API_tests não encontrado, pulando API."
           fi
-
       - name: 📎 Artefatos (API)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: api-${{ env.RESULTS_DIR }}-${{ github.run_id }}
+          name: api-${{ github.run_id }}
           path: ${{ env.RESULTS_DIR }}/api/**
-          retention-days: 14
 
   ui:
-    name: UI
+    name: UI (Selenium)
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
       RF_TAGS: ${{ github.event_name == 'pull_request' && 'smoke' || 'regression' }}
-
     steps:
-      - name: 📥 Checkout
-        uses: actions/checkout@v4
-
-      - name: 🐍 Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: requirements.txt
-
+      - name: 🌐 Instalar Chrome + ChromeDriver compatíveis
+        uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
+          install-dependencies: true
+          install-chromedriver: true
+        # Action oficial para Chrome e ChromeDriver compatíveis. :contentReference[oaicite:1]{index=1}
       - name: 📦 Instalar dependências
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
-      - name: 🌐 Instalar Chrome + ChromeDriver
-        uses: browser-actions/setup-chrome@v1
-        with:
-          chrome-version: "stable"
-          install-dependencies: true
-
       - name: ▶️ Executar testes de UI (headless)
         env:
           BROWSER: chrome
@@ -103,65 +90,52 @@ jobs:
               -v BROWSER:${BROWSER} -v CHROME_ARGS:"${CHROME_ARGS}" \
               tests/UI_tests
           else
-            echo "Diretório tests/UI_tests não encontrado, pulando UI."
+            echo "tests/UI_tests não encontrado, pulando UI."
           fi
-
       - name: 📎 Artefatos (UI)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ui-${{ env.RESULTS_DIR }}-${{ github.run_id }}
+          name: ui-${{ github.run_id }}
           path: ${{ env.RESULTS_DIR }}/ui/**
-          retention-days: 14
 
   a11y:
     name: Acessibilidade
     runs-on: ubuntu-latest
     timeout-minutes: 20
-
     steps:
-      - name: 📥 Checkout
-        uses: actions/checkout@v4
-
-      - name: 🐍 Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: requirements.txt
-
       - name: 📦 Instalar dependências
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
-      - name: ▶️ Executar testes de A11y
+      - name: ▶️ Executar testes de A11y (tags a11y)
         run: |
           mkdir -p "$RESULTS_DIR/a11y"
           if [ -d tests/accessibility_tests ]; then
             robot -d "$RESULTS_DIR/a11y" -i a11y tests/accessibility_tests
           else
-            echo "Diretório tests/accessibility_tests não encontrado, pulando A11y."
+            echo "tests/accessibility_tests não encontrado, pulando A11y."
           fi
-
       - name: 📎 Artefatos (A11y)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: a11y-${{ env.RESULTS_DIR }}-${{ github.run_id }}
+          name: a11y-${{ github.run_id }}
           path: ${{ env.RESULTS_DIR }}/a11y/**
-          retention-days: 14
 
   perf:
     name: Performance (k6)
     runs-on: ubuntu-latest
     timeout-minutes: 20
-
     steps:
-      - name: 📥 Checkout
-        uses: actions/checkout@v4
-
-      - name: ⚙️ Instalar k6
+      - uses: actions/checkout@v4
+      - name: ⚙️ Instalar k6 (repositório oficial)
         run: |
           sudo apt-get update
           sudo apt-get install -y gnupg2 ca-certificates
@@ -169,7 +143,7 @@ jobs:
           curl -fsSL https://dl.k6.io/key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/k6.gpg
           echo "deb [signed-by=/etc/apt/keyrings/k6.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
           sudo apt-get update && sudo apt-get install -y k6
-
+        # Passos baseados na doc oficial do k6. :contentReference[oaicite:2]{index=2}
       - name: ▶️ Executar k6 (se houver script)
         run: |
           mkdir -p "$RESULTS_DIR/perf"
@@ -182,14 +156,12 @@ jobs:
           else
             echo "tests/performance_tests/main.js não encontrado, pulando k6."
           fi
-
       - name: 📎 Artefatos (Perf)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: perf-${{ env.RESULTS_DIR }}-${{ github.run_id }}
+          name: perf-${{ github.run_id }}
           path: ${{ env.RESULTS_DIR }}/perf/**
-          retention-days: 14
 
   resumo:
     name: 📝 Resumo
@@ -200,7 +172,6 @@ jobs:
       - name: Escrever Step Summary
         run: |
           echo "## ✅ Resumo" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Job | Resultado |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
           echo "| API | ${{ needs.api.result }} |" >> $GITHUB_STEP_SUMMARY
@@ -209,9 +180,7 @@ jobs:
           echo "| Perf | ${{ needs.perf.result }} |" >> $GITHUB_STEP_SUMMARY
 
       - name: 📣 Notificar Slack (opcional)
-        if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: env.SLACK_WEBHOOK_URL != ''
         run: |
           TEXT="Pipeline ${{ github.run_id }} finalizada. API:${{ needs.api.result }} | UI:${{ needs.ui.result }} | A11y:${{ needs.a11y.result }} | Perf:${{ needs.perf.result }}"
           curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"$TEXT\"}" "$SLACK_WEBHOOK_URL"
