@@ -30,6 +30,7 @@ Auditar URL
 
 *** Test Cases ***
 A11y Smoke - Lista de Páginas
+    [Tags]    a11y    smoke    regression
     ${raw}=    Get File    ${URLS_FILE}
     @{URLS}=   Split To Lines    ${raw}
     FOR    ${url}    IN    @{URLS}
@@ -62,7 +63,7 @@ ${MAX_VIOLATIONS}          0
 *** Test Cases ***
 Validar Acessibilidade com Axe-Core
     [Documentation]    Executa o axe-core para validar critérios WCAG 2 A/AA na página alvo.
-    [Tags]             accessibility    wcag    wcag2a    wcag2aa
+    [Tags]             accessibility    a11y    wcag    wcag2a    wcag2aa    smoke    regression
     Carregar Axe (Local Ou CDN)
     ${results}=        Executar Axe E Obter Resultados    @{RUN_ONLY_TAGS}
     Imprimir Resumo De Violacoes    ${results}
