@@ -11,7 +11,7 @@ ${REPORT_DIR}         ${CURDIR}/../../reports/performance
 *** Test Cases ***
 Executar Teste K6 Básico
     [Documentation]    Executa o teste básico de carga usando script existente
-    [Tags]    performance    api    k6
+    [Tags]    performance    api    k6    smoke    regression
     
     # Garantir que o diretório de relatórios existe
     Create Directory    ${REPORT_DIR}
@@ -38,7 +38,7 @@ Executar Teste K6 Básico
 
 Verificar Performance da API de Posts
     [Documentation]    Executa o teste de API de posts usando script existente
-    [Tags]    performance    api    k6    posts
+    [Tags]    performance    api    k6    posts    smoke    regression
     
     # Garantir que o diretório de relatórios existe
     Create Directory    ${REPORT_DIR}
