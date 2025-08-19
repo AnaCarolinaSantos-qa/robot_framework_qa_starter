@@ -15,11 +15,14 @@ on:
 jobs:
   a11y:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: 📥 Checkout (manual - branch escolhida)
         if: ${{ github.event_name == 'workflow_dispatch' }}
         uses: actions/checkout@v4
+
         with:
           ref: ${{ inputs.branch }}
 
@@ -51,19 +54,26 @@ jobs:
             PyYAML==6.0.2
 
       - name: 🧪 Executar testes Robot (A11y)
+        env:
+          # garante headless no Chrome por padrão (se seu suite não setar)
+          ROBOT_SYSLOG_FILE: NONE
         run: |
           robot -d results tests/accessibility_tests
 
       - name: 📤 Upload JSON results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.4.3
         with:
           name: axe-json
           path: results/accessibility/*.axe.json
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: 📤 Upload Robot logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.4.3
         with:
           name: robot-report
           path: results
+          if-no-files-found: error
+          retention-days: 14
