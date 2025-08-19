@@ -1,41 +1,4 @@
 *** Settings ***
-Documentation     Executa axe-core via Selenium em uma lista de URLs e salva JSON por página.
-Library           SeleniumLibrary
-Library           OperatingSystem
-Library           String
-Library           ${CURDIR}/../../resources/libraries/a11y_keywords.py
-
-Suite Setup       Preparar Navegador
-Suite Teardown    Close All Browsers
-
-*** Variables ***
-${BROWSER}        chrome
-${OUTPUT_DIR}     ${EXECDIR}/results/accessibility
-${FAIL_ON}        serious
-${URLS_FILE}      ${CURDIR}/../../resources/a11y_urls.txt
-${WIN_WIDTH}      1366
-${WIN_HEIGHT}     900
-
-*** Keywords ***
-Preparar Navegador
-    Open Browser       about:blank    ${BROWSER}    headless=True
-    Set Window Size    ${WIN_WIDTH}   ${WIN_HEIGHT}
-
-Auditar URL
-    [Arguments]    ${url}
-    Go To    ${url}
-    ${safe}=    Replace String Using Regexp    ${url}    [^a-zA-Z0-9\-]    -
-    ${res}=    Run Axe And Save    ${OUTPUT_DIR}    ${safe}    ${FAIL_ON}
-    Log To Console    \n[AXE] ${url} => ${res}
-
-*** Test Cases ***
-A11y Smoke - Lista de Páginas
-    ${raw}=    Get File    ${URLS_FILE}
-    @{URLS}=   Split To Lines    ${raw}
-    FOR    ${url}    IN    @{URLS}
-        Run Keyword If    '${url}'!=''    Auditar URL    ${url}
-    END
-=======
 Documentation     Suite para validar acessibilidade (WCAG) com axe-core via SeleniumLibrary.
 Library           SeleniumLibrary
 Library           OperatingSystem
@@ -49,8 +12,8 @@ Library           BuiltIn
 
 *** Variables ***
 ${URL}                     https://www.w3.org/WAI/ARIA/apg/example-index/
-# Caminho local do axe; mantenha o arquivo em tests/resources/axe.min.js
-${AXE_SCRIPT}              ${CURDIR}/../resources/axe.min.js
+# Caminho local do axe; mantenha o arquivo em resources/axe.min.js
+${AXE_SCRIPT}              ${CURDIR}/../../resources/axe.min.js
 # Fallback CDN caso o arquivo local não exista
 ${AXE_CDN}                 https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.9.1/axe.min.js
 # Parametrizáveis via linha de comando/CI
@@ -127,7 +90,7 @@ Executar Axe E Obter Resultados
     ${result}=    Execute Async JavaScript    var cb=arguments[arguments.length-1]; ${script}.then(r=>cb(r)).catch(e=>cb({error:e && e.message || String(e)}));
     Run Keyword If    '${result}'=='None'    Fail    Falha ao executar axe.run (resultado vazio).
     Run Keyword If    'error' in ${result}    Fail    Erro no axe.run: ${result['error']}
-    [Return]    ${result}
+    RETURN    ${result}
 
 Imprimir Resumo De Violacoes
     [Arguments]    ${result}
