@@ -66,4 +66,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: robot-report
-          path: results
+          path: results/
+
