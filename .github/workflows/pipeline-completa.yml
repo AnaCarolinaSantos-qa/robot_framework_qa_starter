@@ -20,8 +20,6 @@ env:
   PYTHON_VERSION: "3.11"
   RESULTS_DIR: "results"
   CHROME_ARGS: "--headless=new;--disable-gpu;--disable-dev-shm-usage;--no-sandbox;--window-size=1366,900"
-  # Mapeia o segredo p/ env para permitir if: env.SLACK_WEBHOOK_URL != ''
-  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
 jobs:
   api:
@@ -179,8 +177,3 @@ jobs:
           echo "| A11y | ${{ needs.a11y.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Perf | ${{ needs.perf.result }} |" >> $GITHUB_STEP_SUMMARY
 
-      - name: 📣 Notificar Slack (opcional)
-        if: env.SLACK_WEBHOOK_URL != ''
-        run: |
-          TEXT="Pipeline ${{ github.run_id }} finalizada. API:${{ needs.api.result }} | UI:${{ needs.ui.result }} | A11y:${{ needs.a11y.result }} | Perf:${{ needs.perf.result }}"
-          curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"$TEXT\"}" "$SLACK_WEBHOOK_URL"
