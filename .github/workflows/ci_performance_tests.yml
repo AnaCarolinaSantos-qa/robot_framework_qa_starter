@@ -11,12 +11,12 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Log Checkout Completion
         run: echo "Código fonte verificado com sucesso."
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
         
@@ -26,7 +26,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install robotframework==5.0.1
           pip install robotframework-seleniumlibrary==6.0.0
-          pip install requests==2.32.0 pyyaml==6.0.2
+          pip install requests==2.32.0 PyYAML==6.0.2
           echo "Dependências instaladas com sucesso."
 
       - name: Create Directories

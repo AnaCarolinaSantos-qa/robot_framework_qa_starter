@@ -10,7 +10,7 @@ jobs:
     steps:
       # Faz o checkout do repositório na variável $GITHUB_WORKSPACE, para que seu job possa acessá-lo
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # Instala as dependências do Robot Framework
       - name: Install dependencies
