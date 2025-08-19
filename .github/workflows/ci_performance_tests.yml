@@ -3,38 +3,37 @@ name: CI Performance Tests
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 10 * * 1' # seg 10:00 UTC
+    - cron: '0 10 * * 1'
 
 jobs:
   run-tests:
     runs-on: ubuntu-latest
 
-    env:
-      RESULTS_DIR: results
-      PERF_DIR: results/performance
-      REPORTS_DIR: reports/performance
-
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
+      - name: Log Checkout Completion
+        run: echo "Código fonte verificado com sucesso."
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-
+        
       - name: Install Dependencies
         run: |
+          echo "Instalando dependências do projeto..."
           python -m pip install --upgrade pip
           pip install robotframework==5.0.1
           pip install robotframework-seleniumlibrary==6.0.0
           pip install requests==2.32.0 pyyaml==6.0.2
+          echo "Dependências instaladas com sucesso."
 
-      - name: Prepare Folders
+      - name: Create Directories
         run: |
-          mkdir -p "$RESULTS_DIR" "$PERF_DIR" "$REPORTS_DIR"
-          echo "Pastas preparadas."
-
+          mkdir -p reports/performance
+          echo "Diretórios para testes criados com sucesso."
+          
       - name: Verify Docker
         run: |
           docker --version
@@ -43,47 +42,22 @@ jobs:
       - name: Pull K6 Docker Image
         run: docker pull grafana/k6:latest
 
-      - name: Run k6 (via Docker) if script exists
-        shell: bash
+      - name: Run Performance Tests
         run: |
-          set -e
-          # procura um .js de k6
-          SCRIPT="$(ls tests/performance_tests/**/*.js 2>/dev/null | head -n 1 || true)"
-          if [[ -n "$SCRIPT" ]]; then
-            echo "Executando k6 com o script: $SCRIPT"
-            docker run --rm -v "$PWD":/work -w /work grafana/k6:latest \
-              run -o json="$PERF_DIR/k6.json" "$SCRIPT"
-            # exporta sumário para facilitar leitura
-            docker run --rm -v "$PWD":/work -w /work grafana/k6:latest \
-              run --summary-export="$PERF_DIR/summary.json" "$SCRIPT"
-          else
-            echo "Nenhum script k6 (*.js) encontrado em tests/performance_tests/. Gerando marcador..."
-            echo "Nenhum script k6 encontrado nesta execução." > "$PERF_DIR/README.txt"
-          fi
+          echo "Executando os testes de performance..."
+          robot --outputdir results/performance tests/performance_tests/performance_k6_test.robot
 
-      - name: Run Performance Tests (Robot)
-        # mantém o job mesmo se a suíte de performance falhar
+      - name: Run Other Tests
         run: |
-          if [ -f tests/performance_tests/performance_k6_test.robot ]; then
-            robot --outputdir "$PERF_DIR" tests/performance_tests/performance_k6_test.robot || true
-          else
-            echo "Suite Robot de performance não encontrada. Pulando."
-          fi
-
-      - name: Run Other Tests (non-performance)
-        run: |
-          if [ -d tests ]; then
-            robot --outputdir "$RESULTS_DIR" --exclude performance tests/ || true
-          else
-            echo "Diretório 'tests/' não encontrado. Pulando."
-          fi
+          echo "Executando os demais testes (quando existirem)..."
+          robot --outputdir results --exclude performance tests/ || true
 
       - name: Upload Test Reports
         uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: |
-            results/**
-            reports/**
-          if-no-files-found: warn
-          retention-days: 7
+            results/
+            reports/
+      - name: Log Upload Completion
+        run: echo "Relatórios de testes enviados como artefatos com sucesso."
