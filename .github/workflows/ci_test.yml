@@ -1,4 +1,4 @@
-name: CI - Robot Framework Lightweight
+name: CI - Robot Framework Leve
 
 on:
   push:
