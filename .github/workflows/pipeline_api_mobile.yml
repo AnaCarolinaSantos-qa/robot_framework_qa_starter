@@ -8,6 +8,11 @@ on:
   schedule:
     - cron: "0 5 * * *"
   workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch ou tag a executar (ex.: feature/minha-branch, v1.0.0)"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -28,6 +33,9 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Se disparado manualmente (workflow_dispatch) e informado 'ref', usa-o; senão usa o ref do evento
+          ref: ${{ inputs.ref != '' && inputs.ref || github.ref }}
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -40,10 +48,17 @@ jobs:
       - name: Executar testes de API
         run: |
           mkdir -p "${RESULTS_DIR}/api"
+          PATHS=""
           if compgen -G "tests/api/*.robot" > /dev/null; then
-            robot -d "${RESULTS_DIR}/api" -i api tests/api
+            PATHS="${PATHS} tests/api"
+          fi
+          if compgen -G "tests/API_tests/*.robot" > /dev/null; then
+            PATHS="${PATHS} tests/API_tests"
+          fi
+          if [ -n "${PATHS}" ]; then
+            robot -d "${RESULTS_DIR}/api" -i api ${PATHS}
           else
-            echo "tests/api/*.robot não encontrado; pulando API."
+            echo "Nenhuma suíte encontrada em tests/api/*.robot ou tests/API_tests/*.robot; pulando API."
           fi
       - name: Artefatos (API)
         if: always()
@@ -58,6 +73,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref != '' && inputs.ref || github.ref }}
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -83,11 +100,41 @@ jobs:
           path: ${{ env.RESULTS_DIR }}/mobile/**
 
   resumo:
-    name: Resumo
+    name: Resumo & Artefatos Finais
     runs-on: ubuntu-latest
     needs: [api, mobile]
     if: always()
     steps:
+      - name: Baixar artefatos (API)
+        uses: actions/download-artifact@v4
+        with:
+          name: api-${{ github.run_id }}
+          path: collected/api
+        continue-on-error: true
+
+      - name: Baixar artefatos (Mobile)
+        uses: actions/download-artifact@v4
+        with:
+          name: mobile-${{ github.run_id }}
+          path: collected/mobile
+        continue-on-error: true
+
+      - name: Re-publicar artefatos finais (API)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-final-${{ github.run_id }}
+          path: collected/api/**
+          if-no-files-found: warn
+
+      - name: Re-publicar artefatos finais (Mobile)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-final-${{ github.run_id }}
+          path: collected/mobile/**
+          if-no-files-found: warn
+
       - name: Step Summary
         run: |
           echo "## Resumo do Pipeline" >> $GITHUB_STEP_SUMMARY
@@ -96,3 +143,5 @@ jobs:
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
           echo "| API | ${{ needs.api.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Mobile | ${{ needs.mobile.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Artefatos finais publicados: **api-final-${{ github.run_id }}**, **mobile-final-${{ github.run_id }}**." >> $GITHUB_STEP_SUMMARY
