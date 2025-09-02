@@ -5,8 +5,6 @@ on:
     branches: ["**"]
   push:
     branches: ["main"]
-  schedule:
-    - cron: "0 5 * * *"
   workflow_dispatch:
     inputs:
       ref:
@@ -23,12 +21,11 @@ concurrency:
 
 env:
   PYTHON_VERSION: "3.11"
-  RESULTS_DIR: "results"
   RF_TAGS: ${{ github.event_name == 'pull_request' && 'smoke' || 'regression' }}
 
 jobs:
   api:
-    name: API
+    name: Testes de API
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -46,7 +43,7 @@ jobs:
           pip install -r requirements.txt
       - name: Executar testes de API
         run: |
-          mkdir -p "${RESULTS_DIR}/api"
+          mkdir -p API/Results
           PATHS=""
           if compgen -G "tests/api/*.robot" > /dev/null; then
             PATHS="${PATHS} tests/api"
@@ -55,19 +52,21 @@ jobs:
             PATHS="${PATHS} tests/API_tests"
           fi
           if [ -n "${PATHS}" ]; then
-            robot -d "${RESULTS_DIR}/api" -i api ${PATHS}
+            robot -d API/Results -i api ${PATHS}
           else
             echo "Nenhuma suíte encontrada para API."
           fi
-      - name: Salvar resultados API
+      - name: Enviar Resultados dos Testes de API
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: api-temp-${{ github.run_id }}
-          path: ${{ env.RESULTS_DIR }}/api/**
+          name: api-test-results
+          path: API/Results/**
+          if-no-files-found: ignore
+          retention-days: 5
 
   mobile:
-    name: Mobile (fake)
+    name: Testes Mobile (fake)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -85,60 +84,17 @@ jobs:
           pip install -r requirements.txt
       - name: Executar testes Mobile (fake)
         run: |
-          mkdir -p "${RESULTS_DIR}/mobile"
+          mkdir -p Mobile/Results
           if compgen -G "tests/mobile/*.robot" > /dev/null; then
-            robot -d "${RESULTS_DIR}/mobile" -i mobile tests/mobile
+            robot -d Mobile/Results -i mobile tests/mobile
           else
             echo "Nenhuma suíte encontrada para Mobile."
           fi
-      - name: Salvar resultados Mobile
+      - name: Enviar Resultados dos Testes Mobile
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: mobile-temp-${{ github.run_id }}
-          path: ${{ env.RESULTS_DIR }}/mobile/**
-
-  resumo:
-    name: Resumo & Artefatos Finais
-    runs-on: ubuntu-latest
-    needs: [api, mobile]
-    if: always()
-    steps:
-      - name: Baixar artefatos temporários API
-        uses: actions/download-artifact@v4
-        with:
-          name: api-temp-${{ github.run_id }}
-          path: collected/api
-        continue-on-error: true
-
-      - name: Baixar artefatos temporários Mobile
-        uses: actions/download-artifact@v4
-        with:
-          name: mobile-temp-${{ github.run_id }}
-          path: collected/mobile
-        continue-on-error: true
-
-      - name: Upload API final
-        uses: actions/upload-artifact@v4
-        with:
-          name: api-report
-          path: collected/api/**
-          if-no-files-found: warn
-
-      - name: Upload Mobile final
-        uses: actions/upload-artifact@v4
-        with:
-          name: mobile-report
-          path: collected/mobile/**
-          if-no-files-found: warn
-
-      - name: Step Summary
-        run: |
-          echo "## Resumo do Pipeline" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Job | Resultado |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| API | ${{ needs.api.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Mobile | ${{ needs.mobile.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Artefatos finais: **api-report**, **mobile-report**" >> $GITHUB_STEP_SUMMARY
+          name: mobile-test-results
+          path: Mobile/Results/**
+          if-no-files-found: ignore
+          retention-days: 5
