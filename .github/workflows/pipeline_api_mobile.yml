@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: "Branch ou tag a executar (ex.: feature/minha-branch, v1.0.0)"
+        description: "Branch ou tag a executar (ex.: develop, feature/minha-branch)"
         required: false
         default: ""
 
@@ -34,7 +34,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # Se disparado manualmente (workflow_dispatch) e informado 'ref', usa-o; senão usa o ref do evento
           ref: ${{ inputs.ref != '' && inputs.ref || github.ref }}
       - uses: actions/setup-python@v5
         with:
@@ -58,13 +57,13 @@ jobs:
           if [ -n "${PATHS}" ]; then
             robot -d "${RESULTS_DIR}/api" -i api ${PATHS}
           else
-            echo "Nenhuma suíte encontrada em tests/api/*.robot ou tests/API_tests/*.robot; pulando API."
+            echo "Nenhuma suíte encontrada para API."
           fi
-      - name: Artefatos (API)
+      - name: Salvar resultados API
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: api-${{ github.run_id }}
+          name: api-temp-${{ github.run_id }}
           path: ${{ env.RESULTS_DIR }}/api/**
 
   mobile:
@@ -90,13 +89,13 @@ jobs:
           if compgen -G "tests/mobile/*.robot" > /dev/null; then
             robot -d "${RESULTS_DIR}/mobile" -i mobile tests/mobile
           else
-            echo "tests/mobile/*.robot não encontrado; pulando Mobile."
+            echo "Nenhuma suíte encontrada para Mobile."
           fi
-      - name: Artefatos (Mobile)
+      - name: Salvar resultados Mobile
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: mobile-${{ github.run_id }}
+          name: mobile-temp-${{ github.run_id }}
           path: ${{ env.RESULTS_DIR }}/mobile/**
 
   resumo:
@@ -105,33 +104,31 @@ jobs:
     needs: [api, mobile]
     if: always()
     steps:
-      - name: Baixar artefatos (API)
+      - name: Baixar artefatos temporários API
         uses: actions/download-artifact@v4
         with:
-          name: api-${{ github.run_id }}
+          name: api-temp-${{ github.run_id }}
           path: collected/api
         continue-on-error: true
 
-      - name: Baixar artefatos (Mobile)
+      - name: Baixar artefatos temporários Mobile
         uses: actions/download-artifact@v4
         with:
-          name: mobile-${{ github.run_id }}
+          name: mobile-temp-${{ github.run_id }}
           path: collected/mobile
         continue-on-error: true
 
-      - name: Re-publicar artefatos finais (API)
-        if: always()
+      - name: Upload API final
         uses: actions/upload-artifact@v4
         with:
-          name: api-final-${{ github.run_id }}
+          name: api-report
           path: collected/api/**
           if-no-files-found: warn
 
-      - name: Re-publicar artefatos finais (Mobile)
-        if: always()
+      - name: Upload Mobile final
         uses: actions/upload-artifact@v4
         with:
-          name: mobile-final-${{ github.run_id }}
+          name: mobile-report
           path: collected/mobile/**
           if-no-files-found: warn
 
@@ -144,4 +141,4 @@ jobs:
           echo "| API | ${{ needs.api.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Mobile | ${{ needs.mobile.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Artefatos finais publicados: **api-final-${{ github.run_id }}**, **mobile-final-${{ github.run_id }}**." >> $GITHUB_STEP_SUMMARY
+          echo "Artefatos finais: **api-report**, **mobile-report**" >> $GITHUB_STEP_SUMMARY
