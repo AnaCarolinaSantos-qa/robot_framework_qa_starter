@@ -1,10 +1,7 @@
 name: Accessibility Tests
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   accessibility-tests:
@@ -30,8 +27,8 @@ jobs:
           robot -d results tests/accessibility_tests/
 
       - name: Upload Results
-        uses: actions/upload-artifact@v3
         if: always()
+        uses: actions/upload-artifact@v3
         with:
           name: accessibility-test-results
           path: results/

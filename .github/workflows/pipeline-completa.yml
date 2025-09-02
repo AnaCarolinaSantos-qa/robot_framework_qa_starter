@@ -1,12 +1,6 @@
 name: Pipeline completa — Robot Framework
 
 on:
-  pull_request:
-    branches: ["**"]
-  push:
-    branches: ["main"]
-  schedule:
-    - cron: "0 5 * * *" # 02:00 America/Sao_Paulo
   workflow_dispatch:
 
 permissions:

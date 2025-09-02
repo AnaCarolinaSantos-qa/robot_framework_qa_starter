@@ -2,9 +2,6 @@ name: CI Performance Tests
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 10 * * 1'
-
 jobs:
   run-tests:
     runs-on: ubuntu-latest
