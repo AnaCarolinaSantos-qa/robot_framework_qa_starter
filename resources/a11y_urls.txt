@@ -1,3 +1,3 @@
 # List of local pages to check for basic accessibility
 resources/pages/accessible.html
-
+# resources/pages/non_accessible.html   # Example page with accessibility issues
