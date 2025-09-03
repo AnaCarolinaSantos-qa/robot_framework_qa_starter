@@ -113,7 +113,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: grafana/setup-k6-action@v1
         with:
-          k6-version: 0.45.0
+          k6-version: v0.45.0
       - name: Run k6 tests
         run: |
           mkdir -p "$RESULTS_DIR/perf"
