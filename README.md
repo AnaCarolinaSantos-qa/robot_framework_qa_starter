@@ -8,9 +8,11 @@ Este é um projeto de automação de testes utilizando o **Robot Framework**. O 
 
 Aqui estão os status dos diferentes tipos de testes realizados no projeto:
 
-### Testes Completos
-
-[![CI](https://github.com/AnaDAntunes/robot_framework_qa_starter/actions/workflows/ci.yml/badge.svg)](https://github.com/AnaDAntunes/robot_framework_qa_starter/actions/workflows/ci.yml)
+[![API](https://github.com/AnaCarolinaSantos-qa/robot_framework_qa_starter/actions/workflows/ci_completo.yml/badge.svg?job=API)](https://github.com/AnaCarolinaSantos-qa/robot_framework_qa_starter/actions/workflows/ci_completo.yml)
+[![UI](https://github.com/AnaCarolinaSantos-qa/robot_framework_qa_starter/actions/workflows/ci_completo.yml/badge.svg?job=UI%20(Selenium))](https://github.com/AnaCarolinaSantos-qa/robot_framework_qa_starter/actions/workflows/ci_completo.yml)
+[![Mobile](https://github.com/AnaCarolinaSantos-qa/robot_framework_qa_starter/actions/workflows/ci_completo.yml/badge.svg?job=Mobile)](https://github.com/AnaCarolinaSantos-qa/robot_framework_qa_starter/actions/workflows/ci_completo.yml)
+[![Acessibilidade](https://github.com/AnaCarolinaSantos-qa/robot_framework_qa_starter/actions/workflows/ci_completo.yml/badge.svg?job=Acessibilidade)](https://github.com/AnaCarolinaSantos-qa/robot_framework_qa_starter/actions/workflows/ci_completo.yml)
+[![Performance](https://github.com/AnaCarolinaSantos-qa/robot_framework_qa_starter/actions/workflows/ci_completo.yml/badge.svg?job=Performance)](https://github.com/AnaCarolinaSantos-qa/robot_framework_qa_starter/actions/workflows/ci_completo.yml)
 
 ---
 
