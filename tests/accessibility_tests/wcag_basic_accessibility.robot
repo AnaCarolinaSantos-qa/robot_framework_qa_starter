@@ -4,6 +4,7 @@ Library           OperatingSystem
 Library           String
 Library           Collections
 Library           ${CURDIR}/../../resources/libraries/a11y_wcag_checker.py
+Force Tags       accessibility    a11y
 
 *** Variables ***
 ${WCAG_PAGES}     ${CURDIR}/../../resources/a11y_wcag_pages.txt
