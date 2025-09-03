@@ -76,7 +76,7 @@ jobs:
         run: |
           mkdir -p "$RESULTS_DIR/mobile"
           if [ -d tests/mobile ]; then
-            robot -d "$RESULTS_DIR/mobile" tests/mobile
+            robot -d "$RESULTS_DIR/mobile" -i mobile tests/mobile
           else
             echo "tests/mobile não encontrado."
           fi
@@ -113,14 +113,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: grafana/setup-k6-action@v1
         with:
-          version: v0.45.0
+          k6-version: 0.45.0
       - name: Run k6 tests
         run: |
           mkdir -p "$RESULTS_DIR/perf"
-          if [ -f tests/performance_tests/main.js ]; then
-            k6 run --vus 2 --duration 1m --summary-export="$RESULTS_DIR/perf/summary.json" tests/performance_tests/main.js
+          if [ -f tests/performance_tests/k6_scripts/basic_load_test.js ]; then
+            k6 run --vus 2 --duration 10s --summary-export="$RESULTS_DIR/perf/summary.json" tests/performance_tests/k6_scripts/basic_load_test.js
           else
-            echo "tests/performance_tests/main.js não encontrado."
+            echo "tests/performance_tests/k6_scripts/basic_load_test.js não encontrado."
           fi
       - if: always()
         uses: actions/upload-artifact@v4
