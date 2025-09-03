@@ -5,6 +5,7 @@ Library           OperatingSystem
 Library           Collections
 Library           DateTime
 Library           String
+Library           ${CURDIR}/../libraries/performance_config.py
 
 *** Variables ***
 ${K6_SCRIPTS_DIR}     ${CURDIR}/../../tests/performance_tests/k6_scripts
