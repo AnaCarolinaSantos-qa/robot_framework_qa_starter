@@ -3,6 +3,8 @@ Documentation     Testes de performance simplificados com K6
 Library           Process
 Library           OperatingSystem
 Library           DateTime
+Library           Collections
+Library           ${CURDIR}/../../resources/libraries/performance_config.py
 
 *** Variables ***
 ${K6_SCRIPTS_DIR}     ${CURDIR}/k6_scripts
@@ -18,10 +20,15 @@ Executar Teste K6 Básico
     
     # Verificar se o script existe
     File Should Exist    ${K6_SCRIPTS_DIR}/basic_load_test.js
-    
-    # Executar o script k6 via Docker com opções simplificadas
+
+    # Carregar configuração do cenário
+    ${scenario}=    Get Performance Scenario    basic_load
+    ${vus}=    Get From Dictionary    ${scenario}    vus
+    ${duration}=    Get From Dictionary    ${scenario}    duration
+
+    # Executar o script k6 via Docker com parâmetros do cenário
     ${result}=    Run Process
-    ...    docker run --rm -v ${K6_SCRIPTS_DIR}:/scripts grafana/k6:latest run /scripts/basic_load_test.js --duration 10s --vus 5
+    ...    docker run --rm -v ${K6_SCRIPTS_DIR}:/scripts grafana/k6:latest run /scripts/basic_load_test.js --duration ${duration} --vus ${vus}
     ...    shell=True
     
     # Salvar resultado
