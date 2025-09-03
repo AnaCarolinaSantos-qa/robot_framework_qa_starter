@@ -1,4 +1,4 @@
-name: Accessibility
+name: Accessibility Tests
 
 on:
   workflow_dispatch:
