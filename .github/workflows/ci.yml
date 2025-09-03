@@ -1,32 +1,184 @@
 name: CI
 
 on:
+  push:
+    branches: ["main"]
+  pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.11"
+  RESULTS_DIR: results
+  CHROME_ARGS: "--headless=new --disable-gpu --disable-dev-shm-usage --no-sandbox --window-size=1366,900"
+
 jobs:
-  run-tests:
+  api:
+    name: API
     runs-on: ubuntu-latest
-
     steps:
-      # Faz o checkout do repositório na variável $GITHUB_WORKSPACE, para que seu job possa acessá-lo
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-
-      # Instala as dependências do Robot Framework
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
-      # Executa os testes do Robot Framework
-      - name: Run Robot Framework Tests
+      - name: Run API tests
         run: |
-          robot --outputdir results tests/
-
-      # Faz o upload dos relatórios gerados como artefatos
-      - name: Upload Test Reports
+          mkdir -p "$RESULTS_DIR/api"
+          if [ -d tests/api ] || [ -d tests/API_tests ]; then
+            PATHS=""
+            [ -d tests/api ] && PATHS="$PATHS tests/api"
+            [ -d tests/API_tests ] && PATHS="$PATHS tests/API_tests"
+            robot -d "$RESULTS_DIR/api" $PATHS
+          else
+            echo "Nenhuma suíte API encontrada."
+          fi
+      - if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
-          path: results
+          name: api-${{ github.run_id }}
+          path: ${{ env.RESULTS_DIR }}/api/**
+
+  ui:
+    name: UI (Selenium)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
+          install-dependencies: true
+          install-chromedriver: true
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run UI tests
+        env:
+          BROWSER: chrome
+        run: |
+          mkdir -p "$RESULTS_DIR/ui"
+          if [ -d tests/UI_tests ]; then
+            robot -d "$RESULTS_DIR/ui" -v BROWSER:${BROWSER} -v CHROME_ARGS:"${CHROME_ARGS}" tests/UI_tests
+          else
+            echo "tests/UI_tests não encontrado."
+          fi
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-${{ github.run_id }}
+          path: ${{ env.RESULTS_DIR }}/ui/**
+
+  mobile:
+    name: Mobile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run mobile tests
+        run: |
+          mkdir -p "$RESULTS_DIR/mobile"
+          if [ -d tests/mobile ]; then
+            robot -d "$RESULTS_DIR/mobile" tests/mobile
+          else
+            echo "tests/mobile não encontrado."
+          fi
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-${{ github.run_id }}
+          path: ${{ env.RESULTS_DIR }}/mobile/**
+
+  a11y:
+    name: Acessibilidade
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run accessibility tests
+        run: |
+          mkdir -p "$RESULTS_DIR/a11y"
+          if [ -d tests/accessibility_tests ]; then
+            robot -d "$RESULTS_DIR/a11y" -i a11y tests/accessibility_tests
+          else
+            echo "tests/accessibility_tests não encontrado."
+          fi
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a11y-${{ github.run_id }}
+          path: ${{ env.RESULTS_DIR }}/a11y/**
+
+  perf:
+    name: Performance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install k6
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gnupg2 ca-certificates
+          sudo mkdir -p /etc/apt/keyrings
+          curl -fsSL https://dl.k6.io/key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/k6.gpg
+          echo "deb [signed-by=/etc/apt/keyrings/k6.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update && sudo apt-get install -y k6
+      - name: Run k6 tests
+        run: |
+          mkdir -p "$RESULTS_DIR/perf"
+          if [ -f tests/performance_tests/main.js ]; then
+            k6 run --vus 2 --duration 1m --summary-export="$RESULTS_DIR/perf/summary.json" tests/performance_tests/main.js
+          else
+            echo "tests/performance_tests/main.js não encontrado."
+          fi
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-${{ github.run_id }}
+          path: ${{ env.RESULTS_DIR }}/perf/**
+
+  summary:
+    name: Resumo
+    runs-on: ubuntu-latest
+    needs: [api, ui, mobile, a11y, perf]
+    if: always()
+    steps:
+      - name: Write summary
+        run: |
+          echo "## ✅ Resumo" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Resultado |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| API | ${{ needs.api.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| UI | ${{ needs.ui.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Mobile | ${{ needs.mobile.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| A11y | ${{ needs.a11y.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Perf | ${{ needs.perf.result }} |" >> $GITHUB_STEP_SUMMARY
 
