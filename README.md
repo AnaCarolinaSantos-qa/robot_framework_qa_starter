@@ -9,16 +9,8 @@ Este é um projeto de automação de testes utilizando o **Robot Framework**. O 
 Aqui estão os status dos diferentes tipos de testes realizados no projeto:
 
 ### Testes Completos
-[![CI Detalhes dos Testes](https://github.com/AnacAntunes/RobotFramework_modelo/actions/workflows/ci_details_tests.yml/badge.svg)](https://github.com/AnacAntunes/RobotFramework_modelo/actions/workflows/ci_details_tests.yml)  
-*Clique para visualizar os detalhes dos testes completos.*
 
-### Testes de Performance
-[![CI Testes de Performance](https://github.com/AnacAntunes/RobotFramework_modelo/actions/workflows/ci_performance_tests.yml/badge.svg)](https://github.com/AnacAntunes/RobotFramework_modelo/actions/workflows/ci_performance_tests.yml)  
-*Clique para ver os resultados dos testes de performance.*
-
-### Testes de Acessibilidade
-[![Testes de Acessibilidade WCAG](https://github.com/AnacAntunes/RobotFramework_modelo/actions/workflows/ci_accessibility_tests.yml/badge.svg)](https://github.com/AnacAntunes/RobotFramework_modelo/actions/workflows/ci_accessibility_tests.yml)  
-*Clique para conferir os resultados dos testes de acessibilidade.*
+[![CI](https://github.com/AnaDAntunes/robot_framework_qa_starter/actions/workflows/ci.yml/badge.svg)](https://github.com/AnaDAntunes/robot_framework_qa_starter/actions/workflows/ci.yml)
 
 ---
 
