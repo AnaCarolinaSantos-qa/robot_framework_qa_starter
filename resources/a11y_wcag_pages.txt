@@ -1,0 +1,2 @@
+# Pages for WCAG-like checks
+resources/pages/accessible.html

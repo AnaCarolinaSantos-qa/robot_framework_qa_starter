@@ -27,6 +27,7 @@ build/
 # Ignore arquivos gerados pelo Robot Framework
 *.html
 *.xml
+!resources/pages/*.html
 
 # Ignore bibliotecas construídas e arquivos de cache
 *.pyo
@@ -46,3 +47,4 @@ myenv/
 # Ignore arquivos do sistema operacional
 .DS_Store
 Thumbs.db
+
