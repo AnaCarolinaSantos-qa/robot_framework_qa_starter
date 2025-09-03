@@ -134,6 +134,10 @@ jobs:
     needs: [api, ui, mobile, a11y, perf]
     if: always()
     steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: a11y-${{ github.run_id }}
+          path: a11y_artifact
       - name: Write summary
         run: |
           echo "## ✅ Resumo" >> $GITHUB_STEP_SUMMARY
@@ -144,4 +148,20 @@ jobs:
           echo "| Mobile | ${{ needs.mobile.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| A11y | ${{ needs.a11y.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Perf | ${{ needs.perf.result }} |" >> $GITHUB_STEP_SUMMARY
+      - name: Detalhes de acessibilidade
+        run: |
+          python - <<'PY'
+          import os, xml.etree.ElementTree as ET
+          tree = ET.parse('a11y_artifact/output.xml')
+          root = tree.getroot()
+          summary = os.environ['GITHUB_STEP_SUMMARY']
+          with open(summary, 'a', encoding='utf-8') as f:
+              f.write("\n### ♿ Detalhes Acessibilidade (WCAG)\n")
+              f.write("| Teste | Status |\n")
+              f.write("|---|---|\n")
+              for test in root.iter('test'):
+                  name = test.attrib.get('name')
+                  status = test.find('status').attrib.get('status')
+                  f.write(f"| {name} | {status} |\n")
+          PY
 
