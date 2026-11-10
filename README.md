@@ -6,10 +6,11 @@ Este é um projeto de automação de testes utilizando o **Robot Framework**. O 
 
 ## Status dos Testes
 
-[![CI](https://github.com/AnaCarolinaSantos-qa/robot_framework_qa_starter/actions/workflows/ci_completo.yml/badge.svg)](…)
+[![CI](https://github.com/AnaCarolinaSantos-qa/robot_framework_qa_starter/actions/workflows/ci_completo.yml/badge.svg)](https://github.com/AnaCarolinaSantos-qa/robot_framework_qa_starter/actions/workflows/ci_completo.yml)
 
-| Categoria       | Status |
-|-----------------|--------|
+Os resultados atuais de API, interface, mobile, acessibilidade e performance são publicados pelos jobs do workflow acima.
+
+-----------------|--------|
 | 🚀 API          | ![API](https://img.shields.io/badge/API-passing-brightgreen) |
 | 🖥️ UI (Selenium) | ![UI](https://img.shields.io/badge/UI-passing-brightgreen) |
 | 📱 Mobile       | ![Mobile](https://img.shields.io/badge/Mobile-passing-brightgreen) |
@@ -104,10 +105,10 @@ robot --outputdir results --exclude performance tests/
 Para executar os testes de API, você pode usar:
 
 ```bash
-robot tests/API_tests/api_test.robot
+robot tests/api/api_test.robot
 ```
 
-Os relatórios e logs da execução dos testes serão gerados na pasta `reports/`.
+Os relatórios e logs são gerados em `results/` (ou no diretório informado por `--outputdir`).
 
 ---
 
@@ -119,7 +120,7 @@ Os testes estão organizados em diferentes diretórios e arquivos de acordo com 
 - **functional_tests/:** Testes que garantem que as funcionalidades funcionam como esperado.
 - **regression_tests/:** Testes que garantem que funcionalidades existentes não são quebradas por novas alterações.
 - **performance_tests/:** Testes que avaliam o desempenho do sistema.
-- **API_tests/:** Testes específicos para as APIs do sistema.
+- **api/:** Testes específicos para as APIs do sistema.
 - **UI_tests/:** Testes que validam a interface do usuário.
 - **suites/:** Conjuntos de testes para facilitar a execução de grupos de testes relacionados.
 
@@ -137,7 +138,7 @@ Os testes estão organizados em diferentes diretórios e arquivos de acordo com 
 
 ## Relatórios
 
-Após a execução, os relatórios são gerados nas seguintes pastas:
+Após a execução, os relatórios ficam sob o diretório informado por `--outputdir` (por padrão, `results/`).
 
 - **reports/reports/** - Relatórios HTML detalhados.
 - **reports/logs/** - Logs de execução.
