@@ -148,17 +148,19 @@ Este repositório também documenta opções para CI, relatórios consolidados e
 
 ### Como visualizar o Robot Framework Dashboard
 
-Para gerar e abrir um Dashboard local, instale o complemento opcional, execute uma suíte Robot e agregue o `output.xml`:
+Para gerar e abrir um Dashboard local, instale as dependências do projeto, execute uma suíte Robot e agregue o `output.xml`:
 
 ```bash
-python -m pip install -r requirements-dashboard.txt
+python -m pip install -r requirements.txt
 robot --outputdir results/dashboard-run tests/api
 python scripts/generate_robot_dashboard.py --input results/dashboard-run
 ```
 
 Abra `results/dashboard/robot_dashboard.html` no navegador. O banco `results/dashboard/robot_results.db` guarda o histórico; mantenha o mesmo banco e use novos `output.xml` para comparar execuções.
 
-No GitHub Actions, abra a execução do workflow, baixe o artefato `robot-dashboard-<run_id>` na seção **Artifacts**, extraia o ZIP e abra `results/dashboard/robot_dashboard.html`. O artefato inclui também os logs Robot usados pelos links do Dashboard.
+A versão online é publicada após execuções com resultados Robot na branch principal: [Abrir Dashboard](https://anacarolinasantos-qa.github.io/robot_framework_qa_starter/). Como o repositório e a página são públicos, não inclua credenciais nem dados sigilosos nos resultados dos testes.
+
+No GitHub Actions, abra a execução do workflow e baixe o artefato `robot-dashboard-<run_id>` na seção **Artifacts** para consultar o HTML, o banco e os logs detalhados daquela execução.
 
 ---
 

@@ -77,6 +77,8 @@ jobs:
     if: always()
     needs: [changes, api, ui, mobile, accessibility, performance, smoke]
     runs-on: ubuntu-24.04
+    outputs:
+      dashboard_generated: ${{ steps.dashboard.outputs.generated }}
     steps:
       - name: Configure Git default branch
         if: always()
@@ -108,7 +110,7 @@ jobs:
         id: dashboard
         if: always() && (needs.api.result != 'skipped' || needs.ui.result != 'skipped' || needs.mobile.result != 'skipped' || needs.accessibility.result != 'skipped' || needs.smoke.result != 'skipped')
         run: |
-          python -m pip install --disable-pip-version-check robotframework-dashboard==2.5.0
+          python -m pip install --disable-pip-version-check -r requirements.txt
           if find dashboard-input -type f -name 'output.xml' -print -quit | grep -q .; then
             robotdashboard -f dashboard-input \
               -d results/dashboard/robot_results.db \
@@ -133,6 +135,19 @@ jobs:
         with:
           path: results/dashboard/robot_results.db
           key: robot-dashboard-${{ github.ref_name }}-${{ github.run_id }}
+      - name: Generate public Pages dashboard
+        if: steps.dashboard.outputs.generated == 'true' && github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p site
+          robotdashboard \
+            -d results/dashboard/robot_results.db \
+            -n site/index.html \
+            --offlinedependencies -u false
+      - name: Upload GitHub Pages artifact
+        if: steps.dashboard.outputs.generated == 'true' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site/
       - name: Write summary
         env:
           API_RESULT: ${{ needs.api.result }}
@@ -153,3 +168,22 @@ jobs:
             echo "| Performance | ${PERFORMANCE_RESULT} |"
             echo "| Smoke e regressão | ${SMOKE_RESULT} |"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  publish-dashboard:
+    name: Publicar Dashboard no GitHub Pages
+    needs: summary
+    if: needs.summary.result == 'success' && needs.summary.outputs.dashboard_generated == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    steps:
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
