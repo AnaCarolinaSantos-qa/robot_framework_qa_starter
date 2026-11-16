@@ -41,6 +41,8 @@ build/
 # Ignore arquivos de teste temporários e de saída
 *.report
 *.json
+robot_results.db
+robot_dashboard*.db
 
 # Ignore arquivos de configuração específicos de IDEs
 .vscode/

@@ -10,13 +10,17 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Configure Git default branch
+        run: git config --global init.defaultBranch main
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/python-setup
+      - name: Prepare artifact directory
+        run: mkdir -p results/mobile && touch results/mobile/.artifact-placeholder
       - name: Run local mobile tests
         run: robot --outputdir results/mobile -i mobile -e browserstack tests/mobile
       - if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mobile-${{ github.run_id }}
           path: results/mobile/
-          if-no-files-found: warn
+          if-no-files-found: ignore

@@ -26,7 +26,9 @@ jobs:
       performance: ${{ steps.filter.outputs.performance }}
       smoke: ${{ steps.filter.outputs.smoke }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Configure Git default branch
+        run: git config --global init.defaultBranch main
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: dorny/paths-filter@v4
@@ -76,6 +78,61 @@ jobs:
     needs: [changes, api, ui, mobile, accessibility, performance, smoke]
     runs-on: ubuntu-latest
     steps:
+      - name: Configure Git default branch
+        if: always()
+        run: git config --global init.defaultBranch main
+      - uses: actions/checkout@v7
+        if: always()
+      - uses: actions/setup-python@v7
+        if: always() && (needs.api.result != 'skipped' || needs.ui.result != 'skipped' || needs.mobile.result != 'skipped' || needs.accessibility.result != 'skipped' || needs.smoke.result != 'skipped')
+        with:
+          python-version: '3.11'
+      - name: Prepare dashboard directories
+        if: always() && (needs.api.result != 'skipped' || needs.ui.result != 'skipped' || needs.mobile.result != 'skipped' || needs.accessibility.result != 'skipped' || needs.smoke.result != 'skipped')
+        run: mkdir -p dashboard-input results/dashboard
+      - name: Restore dashboard history
+        if: always() && (needs.api.result != 'skipped' || needs.ui.result != 'skipped' || needs.mobile.result != 'skipped' || needs.accessibility.result != 'skipped' || needs.smoke.result != 'skipped')
+        uses: actions/cache/restore@v6
+        with:
+          path: results/dashboard/robot_results.db
+          key: robot-dashboard-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: robot-dashboard-${{ github.ref_name }}-
+      - name: Download Robot Framework results
+        if: always() && (needs.api.result != 'skipped' || needs.ui.result != 'skipped' || needs.mobile.result != 'skipped' || needs.accessibility.result != 'skipped' || needs.smoke.result != 'skipped')
+        uses: actions/download-artifact@v8
+        with:
+          pattern: '*-${{ github.run_id }}'
+          path: dashboard-input
+          merge-multiple: false
+      - name: Generate Robot Framework Dashboard
+        id: dashboard
+        if: always() && (needs.api.result != 'skipped' || needs.ui.result != 'skipped' || needs.mobile.result != 'skipped' || needs.accessibility.result != 'skipped' || needs.smoke.result != 'skipped')
+        run: |
+          python -m pip install --disable-pip-version-check robotframework-dashboard==2.5.0
+          if find dashboard-input -type f -name 'output.xml' -print -quit | grep -q .; then
+            robotdashboard -f dashboard-input \
+              -d results/dashboard/robot_results.db \
+              -n results/dashboard/robot_dashboard.html \
+              --offlinedependencies -u true
+            echo 'generated=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'Nenhum output.xml foi publicado; dashboard não gerado.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload Robot Framework Dashboard
+        if: always() && (needs.api.result != 'skipped' || needs.ui.result != 'skipped' || needs.mobile.result != 'skipped' || needs.accessibility.result != 'skipped' || needs.smoke.result != 'skipped')
+        uses: actions/upload-artifact@v7
+        with:
+          name: robot-dashboard-${{ github.run_id }}
+          path: |
+            results/dashboard/
+            dashboard-input/
+          if-no-files-found: ignore
+      - name: Save dashboard history
+        if: steps.dashboard.outputs.generated == 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: results/dashboard/robot_results.db
+          key: robot-dashboard-${{ github.ref_name }}-${{ github.run_id }}
       - name: Write summary
         env:
           API_RESULT: ${{ needs.api.result }}

@@ -144,7 +144,7 @@ Após a execução, os relatórios ficam sob o diretório informado por `--outpu
 - **reports/logs/** - Logs de execução.
 - **reports/screenshots/** - Capturas de tela em caso de falhas em testes de UI.
 
-Este repositório também documenta opções para CI, relatórios consolidados e dashboards externos. Consulte [Opções de relatórios](docs/reporting-options.md) para exemplos de Robot Framework nativo, JUnit, Allure, Rebot e ReportPortal.
+Este repositório também documenta opções para CI, relatórios consolidados e dashboards externos. Consulte [Opções de relatórios](docs/reporting-options.md) para exemplos do relatório nativo, JUnit, Allure, Rebot, ReportPortal e Robot Framework Dashboard. O CI publica um artefato Dashboard com os resultados Robot das suítes executadas; localmente, instale `requirements-dashboard.txt` e rode `python scripts/generate_robot_dashboard.py`.
 
 ---
 

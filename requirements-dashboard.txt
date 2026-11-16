@@ -1,0 +1,3 @@
+# Complemento opcional para gerar o Robot Framework Dashboard.
+-r requirements.txt
+robotframework-dashboard==2.5.0

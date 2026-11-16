@@ -11,6 +11,7 @@ Este projeto pode gerar relatórios locais, arquivos para CI, relatórios HTML i
 | Relatório combinado (Rebot) | Um `report.html` e `log.html` para múltiplas suítes | Visão consolidada de jobs ou diretórios | Nenhum |
 | Allure | Dashboard HTML com passos, histórico e anexos | Relatórios mais navegáveis e metadados de teste | Pacote Python `allure-robotframework` e CLI Allure |
 | ReportPortal | Dashboard centralizado, lançamentos e análise de histórico | Acompanhamento de execuções de vários ambientes | Instância ReportPortal, agente Python e credenciais |
+| Robot Framework Dashboard | Dashboard HTML interativo, comparações e histórico SQLite | Comparar várias execuções Robot localmente ou baixar o artefato do CI | Dependência opcional `robotframework-dashboard` |
 
 ## 1. Robot Framework nativo
 
@@ -77,12 +78,35 @@ robot --outputdir results/reportportal \
 
 Consulte as instruções do [agente do ReportPortal para Robot Framework](https://github.com/reportportal/agent-Python-RobotFramework) para instalação, autenticação e configuração.
 
+## 6. Robot Framework Dashboard
+
+O Dashboard oficial do Robot Framework agrega `output.xml` em um banco SQLite e gera um HTML interativo. A dependência fica separada do conjunto principal para manter as execuções normais leves:
+
+```bash
+python -m pip install -r requirements-dashboard.txt
+python scripts/generate_robot_dashboard.py --input results
+```
+
+O HTML e o banco são criados em `results/dashboard/`. O banco mantém o histórico entre gerações locais. Para criar saídas em outros caminhos:
+
+```bash
+python scripts/generate_robot_dashboard.py \
+  --input results \
+  --database results/dashboard/robot_results.db \
+  --output results/dashboard/robot_dashboard.html
+```
+
+O CI agrega os resultados Robot das suítes executadas e publica `robot-dashboard-<run_id>` como artefato. Esse artefato contém o HTML, o banco SQLite e os logs de execução necessários para consulta. O cache do GitHub Actions preserva o histórico entre execuções do mesmo branch; ele tem retenção limitada, então não substitui uma instância centralizada para retenção permanente.
+
+Consulte a [documentação oficial do Robot Framework Dashboard](https://docs.robotframework.org/docs/reporting_test_results/robot_framework_dashboard) e o [CLI do projeto](https://marketsquare.github.io/robotframework-dashboard/basic-command-line-interface-cli.html) para filtros, tags e configuração avançada.
+
 ## Caminho sugerido
 
 1. Use o relatório nativo para qualquer execução: já está disponível sem novas dependências.
 2. Habilite JUnit quando uma ferramenta de CI precisar interpretar resultados por teste.
 3. Experimente Allure quando a equipe quiser uma apresentação mais elaborada e anexos.
 4. Use Rebot para combinar resultados que já foram baixados ou coletados.
-5. Adote ReportPortal quando houver uma instância compartilhada e interesse em histórico entre execuções.
+5. Use Robot Framework Dashboard para comparar execuções sem depender de um serviço externo.
+6. Adote ReportPortal quando houver uma instância compartilhada e interesse em histórico entre execuções.
 
-As integrações Allure e ReportPortal são opcionais e não alteram os jobs atuais do workflow.
+Allure e ReportPortal continuam opcionais e não alteram os jobs atuais. O Dashboard é opcional localmente e publicado automaticamente pelo workflow principal.
