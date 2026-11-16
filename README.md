@@ -144,7 +144,21 @@ Após a execução, os relatórios ficam sob o diretório informado por `--outpu
 - **reports/logs/** - Logs de execução.
 - **reports/screenshots/** - Capturas de tela em caso de falhas em testes de UI.
 
-Este repositório também documenta opções para CI, relatórios consolidados e dashboards externos. Consulte [Opções de relatórios](docs/reporting-options.md) para exemplos do relatório nativo, JUnit, Allure, Rebot, ReportPortal e Robot Framework Dashboard. O CI publica um artefato Dashboard com os resultados Robot das suítes executadas; localmente, instale `requirements-dashboard.txt` e rode `python scripts/generate_robot_dashboard.py`.
+Este repositório também documenta opções para CI, relatórios consolidados e dashboards externos. Consulte [Opções de relatórios](docs/reporting-options.md) para exemplos do relatório nativo, JUnit, Allure, Rebot, ReportPortal e Robot Framework Dashboard.
+
+### Como visualizar o Robot Framework Dashboard
+
+Para gerar e abrir um Dashboard local, instale o complemento opcional, execute uma suíte Robot e agregue o `output.xml`:
+
+```bash
+python -m pip install -r requirements-dashboard.txt
+robot --outputdir results/dashboard-run tests/api
+python scripts/generate_robot_dashboard.py --input results/dashboard-run
+```
+
+Abra `results/dashboard/robot_dashboard.html` no navegador. O banco `results/dashboard/robot_results.db` guarda o histórico; mantenha o mesmo banco e use novos `output.xml` para comparar execuções.
+
+No GitHub Actions, abra a execução do workflow, baixe o artefato `robot-dashboard-<run_id>` na seção **Artifacts**, extraia o ZIP e abra `results/dashboard/robot_dashboard.html`. O artefato inclui também os logs Robot usados pelos links do Dashboard.
 
 ---
 

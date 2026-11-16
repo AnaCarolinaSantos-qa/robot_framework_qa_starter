@@ -17,7 +17,7 @@ permissions:
 jobs:
   changes:
     name: Detectar suítes afetadas
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       api: ${{ steps.filter.outputs.api }}
       ui: ${{ steps.filter.outputs.ui }}
@@ -76,7 +76,7 @@ jobs:
     name: Resumo
     if: always()
     needs: [changes, api, ui, mobile, accessibility, performance, smoke]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Configure Git default branch
         if: always()
