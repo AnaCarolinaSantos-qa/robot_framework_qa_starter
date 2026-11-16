@@ -17,7 +17,7 @@ Este projeto pode gerar relatórios locais, arquivos para CI, relatórios HTML i
 O comando atual já gera `output.xml`, `report.html` e `log.html`. No CI, cada job publica sua pasta `results/<suite>` como artefato para download.
 
 ```bash
-robot --outputdir results/native --exclude performance tests/
+robot --outputdir results/native --exclude performance --exclude browserstack tests/
 ```
 
 Use o `report.html` para o resumo e o `log.html` para examinar keywords, mensagens e falhas.
@@ -27,7 +27,7 @@ Use o `report.html` para o resumo e o `log.html` para examinar keywords, mensage
 O Robot Framework também pode gerar um XML compatível com consumidores JUnit. O restante das saídas nativas continua disponível:
 
 ```bash
-robot --outputdir results/junit --xunit xunit.xml --exclude performance tests/
+robot --outputdir results/junit --xunit xunit.xml --exclude performance --exclude browserstack tests/
 ```
 
 O arquivo será `results/junit/xunit.xml`. Configure o servidor de CI para coletar esse caminho como resultado de testes.
@@ -53,7 +53,7 @@ Allure fornece um relatório HTML interativo e suporta passos, metadados, links 
 python -m pip install allure-robotframework
 robot --outputdir results/allure-robot \
   --listener allure_robotframework:results/allure-data \
-  --exclude performance tests/
+  --exclude performance --exclude browserstack tests/
 allure generate results/allure-data --clean --output results/allure-report
 ```
 
@@ -72,7 +72,7 @@ robot --outputdir results/reportportal \
   --variable RP_PROJECT:$RP_PROJECT \
   --variable RP_LAUNCH:"Robot Framework CI" \
   --variable RP_API_KEY:$RP_API_KEY \
-  --exclude performance tests/
+  --exclude performance --exclude browserstack tests/
 ```
 
 Consulte as instruções do [agente do ReportPortal para Robot Framework](https://github.com/reportportal/agent-Python-RobotFramework) para instalação, autenticação e configuração.
