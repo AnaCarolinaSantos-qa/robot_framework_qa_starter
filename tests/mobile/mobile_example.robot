@@ -5,8 +5,8 @@ Suite Setup      Abrir Sessao
 Suite Teardown   Close All Applications
 
 *** Variables ***
-${BROWSERSTACK_USER}    %{BROWSERSTACK_USERNAME}
-${BROWSERSTACK_KEY}     %{BROWSERSTACK_ACCESS_KEY}
+${BROWSERSTACK_USER}    %{BROWSERSTACK_USERNAME=}
+${BROWSERSTACK_KEY}     %{BROWSERSTACK_ACCESS_KEY=}
 ${REMOTE_URL}           http://${BROWSERSTACK_USER}:${BROWSERSTACK_KEY}@hub-cloud.browserstack.com/wd/hub
 
 # A variável BS_APP virá do workflow (robot -v BS_APP:"bs://...").
@@ -30,6 +30,7 @@ Abrir Sessao
 
 *** Test Cases ***
 Abrir App e Validar Tela Inicial
+    [Tags]    browserstack
     [Documentation]    Espera elemento genérico da tela inicial (ajuste os seletores conforme seu app)
     Wait Until Page Contains Element    xpath=//android.view.View    10s
     # Exemplos:

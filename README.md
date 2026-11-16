@@ -8,7 +8,7 @@ Este é um projeto de automação de testes utilizando o **Robot Framework**. O 
 
 [![CI](https://github.com/AnaCarolinaSantos-qa/robot_framework_qa_starter/actions/workflows/ci_completo.yml/badge.svg)](https://github.com/AnaCarolinaSantos-qa/robot_framework_qa_starter/actions/workflows/ci_completo.yml)
 
-Os resultados atuais de API, interface, mobile, acessibilidade e performance são publicados pelos jobs do workflow acima.
+O CI separa API, UI, mobile, acessibilidade, performance e smoke/regressão em workflows reutilizáveis. Em pushes e pull requests, as suítes são selecionadas pelos caminhos alterados; a execução manual dispara todas. Os artefatos ficam disponíveis no GitHub Actions. A suíte BrowserStack é opt-in e fica fora da execução padrão.
 
 -----------------|--------|
 | 🚀 API          | ![API](https://img.shields.io/badge/API-passing-brightgreen) |
@@ -99,7 +99,7 @@ O arquivo `tests/performance_tests/performance_k6_test.robot` demonstra como:
 Para executar os testes, utilize o seguinte comando na linha de comando na raiz do projeto:
 
 ```bash
-robot --outputdir results --exclude performance tests/
+robot --outputdir results --exclude performance --exclude browserstack tests/
 ```
 
 Para executar os testes de API, você pode usar:
@@ -143,6 +143,8 @@ Após a execução, os relatórios ficam sob o diretório informado por `--outpu
 - **reports/reports/** - Relatórios HTML detalhados.
 - **reports/logs/** - Logs de execução.
 - **reports/screenshots/** - Capturas de tela em caso de falhas em testes de UI.
+
+Este repositório também documenta opções para CI, relatórios consolidados e dashboards externos. Consulte [Opções de relatórios](docs/reporting-options.md) para exemplos de Robot Framework nativo, JUnit, Allure, Rebot e ReportPortal.
 
 ---
 

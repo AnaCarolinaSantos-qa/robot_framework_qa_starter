@@ -1,0 +1,27 @@
+name: CI - Smoke e regressão
+
+on:
+  workflow_call:
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/python-setup
+      - name: Run smoke and regression tests
+        run: |
+          robot --outputdir results/smoke \
+            tests/acceptance_tests \
+            tests/functional_tests \
+            tests/regression_tests \
+            tests/suites
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-${{ github.run_id }}
+          path: results/smoke/
+          if-no-files-found: warn

@@ -1,0 +1,22 @@
+name: CI - API
+
+on:
+  workflow_call:
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/python-setup
+      - name: Run API tests
+        run: robot --outputdir results/api tests/api
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-${{ github.run_id }}
+          path: results/api/
+          if-no-files-found: warn

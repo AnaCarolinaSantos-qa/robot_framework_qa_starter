@@ -1,0 +1,28 @@
+name: CI - Performance
+
+on:
+  workflow_call:
+
+env:
+  RESULTS_DIR: results
+
+jobs:
+  k6:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: grafana/setup-k6-action@v1
+        with:
+          k6-version: 0.45.0
+      - name: Run k6 tests
+        run: |
+          mkdir -p "$RESULTS_DIR/performance"
+          k6 run --vus 2 --duration 10s \
+            --summary-export="$RESULTS_DIR/performance/summary.json" \
+            tests/performance_tests/k6_scripts/basic_load_test.js
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-${{ github.run_id }}
+          path: results/performance/
+          if-no-files-found: warn

@@ -1,0 +1,30 @@
+name: CI - UI
+
+on:
+  workflow_call:
+
+env:
+  PYTHON_VERSION: '3.11'
+  CHROME_ARGS: '--headless=new --disable-gpu --disable-dev-shm-usage --no-sandbox --window-size=1366,900'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
+          install-dependencies: true
+          install-chromedriver: true
+      - uses: ./.github/actions/python-setup
+      - name: Run UI tests
+        env:
+          BROWSER: chrome
+        run: robot --outputdir results/ui -v BROWSER:${BROWSER} -v CHROME_ARGS:"${CHROME_ARGS}" tests/UI_tests
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-${{ github.run_id }}
+          path: results/ui/
+          if-no-files-found: warn
