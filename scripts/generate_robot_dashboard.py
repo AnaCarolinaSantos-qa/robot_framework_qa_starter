@@ -17,7 +17,7 @@ def main() -> int:
     args = parser.parse_args()
 
     if shutil.which("robotdashboard") is None:
-        parser.error("robotdashboard não encontrado; instale com: python -m pip install -r requirements-dashboard.txt")
+        parser.error("robotdashboard não encontrado; instale as dependências com: python -m pip install -r requirements.txt")
 
     output_files = sorted(args.input.rglob("output.xml"))
     if not output_files:
