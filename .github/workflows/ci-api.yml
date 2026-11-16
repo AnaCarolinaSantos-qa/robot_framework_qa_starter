@@ -10,13 +10,17 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Configure Git default branch
+        run: git config --global init.defaultBranch main
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/python-setup
+      - name: Prepare artifact directory
+        run: mkdir -p results/api && touch results/api/.artifact-placeholder
       - name: Run API tests
         run: robot --outputdir results/api tests/api
       - if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: api-${{ github.run_id }}
           path: results/api/
-          if-no-files-found: warn
+          if-no-files-found: ignore

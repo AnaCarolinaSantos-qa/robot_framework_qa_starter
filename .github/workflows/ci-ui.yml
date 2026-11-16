@@ -11,20 +11,24 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Configure Git default branch
+        run: git config --global init.defaultBranch main
+      - uses: actions/checkout@v7
       - uses: browser-actions/setup-chrome@v2
         with:
           chrome-version: stable
           install-dependencies: true
           install-chromedriver: true
       - uses: ./.github/actions/python-setup
+      - name: Prepare artifact directory
+        run: mkdir -p results/ui && touch results/ui/.artifact-placeholder
       - name: Run UI tests
         env:
           BROWSER: chrome
         run: robot --outputdir results/ui -v BROWSER:${BROWSER} -v CHROME_ARGS:"${CHROME_ARGS}" tests/UI_tests
       - if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ui-${{ github.run_id }}
           path: results/ui/
-          if-no-files-found: warn
+          if-no-files-found: ignore
