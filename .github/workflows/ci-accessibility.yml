@@ -1,0 +1,42 @@
+name: CI - Acessibilidade
+
+on:
+  workflow_call:
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/python-setup
+      - name: Run accessibility tests
+        run: robot --outputdir results/accessibility -i a11y tests/accessibility_tests
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-${{ github.run_id }}
+          path: results/accessibility/
+          if-no-files-found: warn
+      - name: Acessibilidade no resumo do GitHub
+        if: always()
+        run: |
+          python - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
+
+          from pathlib import Path
+
+          output = Path('results/accessibility/output.xml')
+          if not output.exists():
+              raise SystemExit(0)
+
+          root = ET.parse(output).getroot()
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as summary:
+              summary.write('\n### 🌐 Detalhes de acessibilidade\n\n| Teste | Status |\n|---|---|\n')
+              for test in root.iter('test'):
+                  status = test.find('status')
+                  summary.write(f"| {test.attrib.get('name')} | {status.attrib.get('status')} |\n")
+          PY

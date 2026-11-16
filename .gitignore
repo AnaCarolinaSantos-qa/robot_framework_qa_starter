@@ -8,6 +8,11 @@ logs/
 reports/
 screenshots/
 results/
+/allure-results/
+/allure-data/
+/allure-report/
+/junit.xml
+/xunit.xml
 
 # Ignore arquivos temporários e de saída
 *.tmp
